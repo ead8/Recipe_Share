@@ -1,48 +1,3 @@
-<template>
-  <div class="w-64 h- card border border-gray-300 rounded-lg p-4 shadow-md hover:shadow-xl">
-    <div class="relative h-48">
-      <NuxtLink :to="`/recipes/${recipe.id}`">
-        <img :src="recipe.featured_image" :alt="recipe.title" class="w-full h-full object-cover rounded-lg">
-      </NuxtLink>
-      <div class="absolute top-2 right-2">
-        <div class="flex">
-          <span v-for="star in 5">
-            <Icon name="entypo:star" class="font-[16px]"
-              :class="{ 'text-yellow-500': star <= getLatestRating(), 'text-gray-400': star > getLatestRating() }" />
-          </span>
-        </div>
-      </div>
-    </div>
-    <div class="p-4">
-      <h5 class="text-lg font-bold mb-2">{{ recipe.title }}</h5>
-      <p class="text-sm text-gray-600">{{ recipe.preparation_time }} minutes</p>
-      <div class="flex items-center mt-4">
-        <div class="mr-4" v-if="myRecipe">
-          <Icon name="line-md:remove" class="text-gray-500 material-icons cursor-pointer" style="font-size: 20px;"
-            @click="handleDeleteRecipe({ recipeId: recipe.id })" />
-        </div>
-        <div class="mr-4" v-if="myRecipe">
-          <Icon name="line-md:edit-twotone-full" class="text-gray-500 material-icons cursor-pointer"
-            style="font-size: 20px;" @click="handleEdit(recipe.id)" />
-        </div>
-        <div class="mr-4">
-          <Icon name="entypo:bookmark" class="text-gray-500 material-icons cursor-pointer"
-            :class="{ 'text-green-500': recipe.bookmarks[recipe?.bookmarks?.length - 1]?.bookmarked }" v-if="favIcons"
-            @click="toggleBookmark({ recipeId: recipe.id, bookmarked: !recipe.bookmarks[recipe?.bookmarks?.length - 1]?.bookmarked })"
-            style="font-size: 20px;" />
-        </div>
-        <div class="mr-4">
-          <Icon name="la:heart-solid" class="text-gray-500 material-icons cursor-pointer"
-            :class="{ 'text-red-500': !recipe?.likes[recipe?.likes?.length - 1]?.liked }" v-if="favIcons"
-            @click="toggleLike({ recipeId: recipe.id, liked: !recipe?.likes[recipe?.likes?.length - 1]?.liked })"
-            style="font-size: 20px;" />
-        </div>
-        <div v-if="favIcons" class="text-sm text-gray-600">{{ likesCount }} likes</div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
 
 import { GET_RECIPE_LIKES, DELETE_RECIPE, TOGGLE_BOOKMARK, DELETE_BOOKMARK, TOGGLE_LIKE } from '../appolo/appolo.js'
@@ -136,3 +91,47 @@ const getLatestRating = () => {
 };
 
 </script>
+
+<template>
+  <div @click.stop='router.push(`/recipes/${recipe.id}`)' class="w-64 h-card border border-gray-300 rounded-lg p-4 shadow-md hover:shadow-xl cursor-pointer">
+    <div class="relative h-48">
+        <img :src="recipe.featured_image" :alt="recipe.title" class="w-full h-full object-cover rounded-lg">
+      <div class="absolute top-2 right-2">
+        <div class="flex">
+          <span v-for="star in 5">
+            <Icon name="entypo:star" class="font-[16px]"
+              :class="{ 'text-yellow-500': star <= getLatestRating(), 'text-gray-400': star > getLatestRating() }" />
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="p-4">
+      <h5 class="text-lg font-bold mb-2">{{ recipe.title }}</h5>
+      <p class="text-sm text-gray-600">{{ recipe.preparation_time }} minutes</p>
+      <div class="flex items-center mt-4">
+        <div class="mr-4" v-if="myRecipe">
+          <Icon name="line-md:remove" class="text-gray-500 material-icons cursor-pointer" style="font-size: 20px;"
+            @click="handleDeleteRecipe({ recipeId: recipe.id })" />
+        </div>
+        <div class="mr-4" v-if="myRecipe">
+          <Icon name="line-md:edit-twotone-full" class="text-gray-500 material-icons cursor-pointer"
+            style="font-size: 20px;" @click="handleEdit(recipe.id)" />
+        </div>
+        <div class="mr-4">
+          <Icon name="entypo:bookmark" class="text-gray-500 material-icons cursor-pointer"
+            :class="{ 'text-green-500': recipe.bookmarks[recipe?.bookmarks?.length - 1]?.bookmarked }" v-if="favIcons"
+            @click="toggleBookmark({ recipeId: recipe.id, bookmarked: !recipe.bookmarks[recipe?.bookmarks?.length - 1]?.bookmarked })"
+            style="font-size: 20px;" />
+        </div>
+        <div class="mr-4">
+          <Icon name="la:heart-solid" class="text-gray-500 material-icons cursor-pointer"
+            :class="{ 'text-red-500': !recipe?.likes[recipe?.likes?.length - 1]?.liked }" v-if="favIcons"
+            @click="toggleLike({ recipeId: recipe.id, liked: !recipe?.likes[recipe?.likes?.length - 1]?.liked })"
+            style="font-size: 20px;" />
+        </div>
+        <div v-if="favIcons" class="text-sm text-gray-600">{{ likesCount }} likes</div>
+      </div>
+    </div>
+  </div>
+</template>
+

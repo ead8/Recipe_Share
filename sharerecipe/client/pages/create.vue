@@ -160,7 +160,7 @@ const recipeSchema = yup.object({
             :name="`steps[${index}].description`" placeholder="Step Description"></VField>
           <VErrorMessage :name="`steps[${index}].description`" class="text-red-500" />
           <button @click="removeStep(index)"
-            class="ml-2 bg-red-500 text-slate-100 px-4 py-2 rounded-md slate-100 whitespace-nowrap">Remove Step</button>
+            class="ml-2 bg-red-500 text-slate-100 px-4 py-2 rounded-md slate-100 whitespace-nowrap"><Icon name="ant-design:delete-filled"/></button>
         </div>
         <button @click="addStep" class="bg-blue-500 text-slate-100 px-4 py-2 rounded-md">Add Step</button>
       </div>
@@ -175,8 +175,9 @@ const recipeSchema = yup.object({
           <VField v-model="ingredient.quantity" type="text" class="w-1/4 rounded-md p-2 mr-2"
             :name="`ingredients[${index}].quantity`" placeholder="Quantity" />
           <VErrorMessage :name="`ingredients[${index}].quantity`" class="text-red-500" />
-          <button @click="removeIngredient(index)" class="bg-red-500 text-slate-100 px-4 py-2 rounded-md ">Remove
-            Ingredient</button>
+          <button @click="removeIngredient(index)" class="bg-red-500 text-slate-100 px-4 py-2 rounded-md ">
+            <Icon name="ant-design:delete-filled"/>
+          </button>
         </div>
         <button @click="addIngredient" class="bg-blue-500 text-slate-100 px-4 py-2 rounded-md">Add Ingredient</button>
       </div>

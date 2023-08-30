@@ -1,3 +1,96 @@
+<script setup>
+
+import {
+  GET_RECIPES, GET_RECIPES_BY_TITLE, GET_CATEGORIES, GET_CREATORS,
+} from '../appolo/appolo.js'
+
+const categories = ref([]);
+const creators = ref([]);
+const selectedCategory = ref('');
+const selectedCreator = ref('');
+const selectedPreparationTime = ref('');
+const selectedIngredients = ref('');
+
+const recipes = ref([]);
+const query = ref('');
+const router = useRouter()
+
+const handleChange = (e) => {
+  query.value = e.target.value;
+};
+
+const handleCategoryChange = () => {
+  // console.log(selectedCategory.value);
+  if (selectedCategory.value) {
+    router.push(`/category/${selectedCategory.value}`);
+  }
+};
+
+const handleCreatorChange = () => {
+  // console.log(selectedCreator.value);
+
+  if (selectedCreator.value) {
+    router.push(`/creator/${selectedCreator.value}`);
+  }
+};
+
+
+const handleSearchedRecipe = async () => {
+  if (query.value.trim() === '') {
+
+    const { data } = await useAsyncQuery(GET_RECIPES);
+    // console.log(data._value?.recipes);
+    recipes.value = data?._value?.recipes || [];
+  } else {
+    //  search query
+    const { data } = await useAsyncQuery(GET_RECIPES_BY_TITLE,
+      { title: `%${query.value}%` },
+    );
+    recipes.value = data?._value?.recipes || [];
+  }
+};
+
+
+watchEffect(async () => {
+  const { data } = await useAsyncQuery(GET_RECIPES);
+  recipes.value = data?._value?.recipes || [];
+  // console.log(data._value?.recipes);
+});
+
+const { loading, data: categoryData } = await useAsyncQuery(GET_CATEGORIES);
+categories.value = categoryData?._value?.categories
+
+const { loading: creatorLoading, data: creatorData } = await useAsyncQuery(GET_CREATORS);
+creators.value = creatorData?._value?.users
+// console.log(categories.value);
+
+const handleFilter = () => {
+  let filteredRecipes = recipes.value;
+
+  if (selectedPreparationTime.value) {
+    filteredRecipes = filteredRecipes.filter(recipe => {
+      if (selectedPreparationTime.value === "short") {
+        return recipe.preparation_time <= 30;
+      } else if (selectedPreparationTime.value === "medium") {
+        return recipe.preparation_time > 30 && recipe.preparation_time <= 60;
+      } else if (selectedPreparationTime.value === "long") {
+        return recipe.preparation_time > 60;
+      }
+      return true;
+    });
+  }
+
+  if (selectedIngredients.value) {
+    filteredRecipes = filteredRecipes.filter(recipe => {
+      return recipe.ingredients.some(ingredient => ingredient.includes(selectedIngredients.value));
+    });
+  }
+
+  recipes.value = filteredRecipes;
+  // console.log(recipes.value);
+};
+</script>
+
 <template>
   <div class="w-full">
     <div class="w-full flex items-center justify-center pt-10 pb-5 px-0 md:px-7 space-x-4">
@@ -60,97 +153,5 @@
     </div>
   </div>
 </template>
->
-
-<script setup>
-
-import {
-  GET_RECIPES, GET_RECIPES_BY_TITLE, GET_CATEGORIES, GET_CREATORS,
-} from '../appolo/appolo.js'
-
-const categories = ref([]);
-const creators = ref([]);
-const selectedCategory = ref('');
-const selectedCreator = ref('');
-const selectedPreparationTime = ref('');
-const selectedIngredients = ref('');
-
-const recipes = ref([]);
-const query = ref('');
-const router = useRouter()
-
-const handleChange = (e) => {
-  query.value = e.target.value;
-};
-
-const handleCategoryChange = () => {
-  // console.log(selectedCategory.value);
-  if (selectedCategory.value) {
-    router.push(`/category/${selectedCategory.value}`);
-  }
-};
-
-const handleCreatorChange = () => {
-  // console.log(selectedCreator.value);
-
-  if (selectedCreator.value) {
-    router.push(`/creator/${selectedCreator.value}`);
-  }
-};
 
 
-const handleSearchedRecipe = async () => {
-  if (query.value.trim() === '') {
-
-    const { data } = await useAsyncQuery(GET_RECIPES);
-    // console.log(data._value?.recipes);
-    recipes.value = data?._value?.recipes || [];
-  } else {
-    //  search query
-    const { data } = await useAsyncQuery(GET_RECIPES_BY_TITLE,
-      { title: `%${query.value}%` },
-    );
-    recipes.value = data?._value?.recipes || [];
-  }
-};
-
-
-watchEffect(async () => {
-  const { data } = await useAsyncQuery(GET_RECIPES);
-  recipes.value = data?._value?.recipes || [];
-  console.log(data._value?.recipes);
-});
-
-const { loading, data: categoryData } = await useAsyncQuery(GET_CATEGORIES);
-categories.value = categoryData?._value?.categories
-
-const { loading: creatorLoading, data: creatorData } = await useAsyncQuery(GET_CREATORS);
-creators.value = creatorData?._value?.users
-// console.log(creatorData._value?.users);
-
-const handleFilter = () => {
-  let filteredRecipes = recipes.value;
-
-  if (selectedPreparationTime.value) {
-    filteredRecipes = filteredRecipes.filter(recipe => {
-      if (selectedPreparationTime.value === "short") {
-        return recipe.preparation_time <= 30;
-      } else if (selectedPreparationTime.value === "medium") {
-        return recipe.preparation_time > 30 && recipe.preparation_time <= 60;
-      } else if (selectedPreparationTime.value === "long") {
-        return recipe.preparation_time > 60;
-      }
-      return true;
-    });
-  }
-
-  if (selectedIngredients.value) {
-    filteredRecipes = filteredRecipes.filter(recipe => {
-      return recipe.ingredients.some(ingredient => ingredient.includes(selectedIngredients.value));
-    });
-  }
-
-  recipes.value = filteredRecipes;
-  // console.log(recipes.value);
-};
-</script>
