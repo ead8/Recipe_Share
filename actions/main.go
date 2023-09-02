@@ -350,7 +350,6 @@ func refreshTokenHandler(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "User not found"})
 		return
 	}
-
 	// Unmarshal the userData into a map
 	var userMap map[string]interface{}
 	if err := json.Unmarshal(userData, &userMap); err != nil {
@@ -360,6 +359,7 @@ func refreshTokenHandler(c *gin.Context) {
 
 	// Generate a new access token with an extended expiration time using the userMap
 	accessToken, err := generateToken(userMap)
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to generate access token"})
 		return
@@ -367,9 +367,6 @@ func refreshTokenHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"access_token": accessToken})
 }
-
-
-
 func main() {
 	router := gin.Default()
     router.POST("/refresh-token", refreshTokenHandler)
