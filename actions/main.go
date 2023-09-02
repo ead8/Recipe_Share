@@ -5,10 +5,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"gin-cloudinary-api/controllers"
 	"io"
 	"net/http"
+	"strings"
 	"time"
-	"gin-cloudinary-api/controllers"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -87,6 +89,22 @@ func findUserByEmail(email string) ([]byte, error) {
 	return client.runQuery(query, variables)
 }
 
+func findUserByID(id int) ([]byte,error){
+	client:=&Client{URL: HASURA_URL,Headers: map[string]string{"X-Hasura-Admin-Secret":HASURA_HEADERS_SECRET}}
+	query := `
+	query UserByID($id: Int!) {
+		users_by_pk(id: $id) {
+			id
+			email
+			password
+		}
+	}
+`
+	variables:=map[string]interface{}{
+		"id":id,
+	}
+	return client.runQuery(query,variables)
+}
 // CreateUserOutput represents the output of the create user mutation
 type CreateUserOutput struct {
 	ID       int    `json:"id"`
@@ -332,9 +350,16 @@ func refreshTokenHandler(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "User not found"})
 		return
 	}
+	// Unmarshal the userData into a map
+	var userMap map[string]interface{}
+	if err := json.Unmarshal(userData, &userMap); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to parse user data"})
+		return
+	}
 
-	// Generate a new access token with an extended expiration time
-	accessToken, err := generateToken(userData)
+	// Generate a new access token with an extended expiration time using the userMap
+	accessToken, err := generateToken(userMap)
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to generate access token"})
 		return
@@ -342,8 +367,6 @@ func refreshTokenHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"access_token": accessToken})
 }
-
-
 func main() {
 	router := gin.Default()
     router.POST("/refresh-token", refreshTokenHandler)
