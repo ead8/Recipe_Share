@@ -5,10 +5,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"gin-cloudinary-api/controllers"
 	"io"
 	"net/http"
+	"strings"
 	"time"
-	"gin-cloudinary-api/controllers"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -87,6 +89,22 @@ func findUserByEmail(email string) ([]byte, error) {
 	return client.runQuery(query, variables)
 }
 
+func findUserByID(id int) ([]byte,error){
+	client:=&Client{URL: HASURA_URL,Headers: map[string]string{"X-Hasura-Admin-Secret":HASURA_HEADERS_SECRET}}
+	query := `
+	query UserByID($id: Int!) {
+		users_by_pk(id: $id) {
+			id
+			email
+			password
+		}
+	}
+`
+	variables:=map[string]interface{}{
+		"id":id,
+	}
+	return client.runQuery(query,variables)
+}
 // CreateUserOutput represents the output of the create user mutation
 type CreateUserOutput struct {
 	ID       int    `json:"id"`
@@ -281,11 +299,80 @@ func loginHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
+func refreshTokenHandler(c *gin.Context) {
+	// Get the token from the request header
+	authorizationHeader := c.GetHeader("Authorization")
+	if authorizationHeader == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Authorization header is missing"})
+		return
+	}
+
+	// Extract the token from the "Bearer <token>" format
+	tokenString := strings.Split(authorizationHeader, " ")[1]
+
+	// Parse and validate the token
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Check the signing method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("invalid token signing method")
+		}
+		// Return the secret key used for signing the token
+		return []byte(HASURA_JWT_SECRET), nil
+	})
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid token"})
+		return
+	}
+
+	// Check if the token is valid
+	if !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid token"})
+		return
+	}
+
+	// Extract the user ID from the token claims
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to parse token claims"})
+		return
+	}
+	userID := int(claims["https://hasura.io/jwt/claims"].(map[string]interface{})["x-hasura-user-id"].(float64))
+
+	// Fetch the user from the database based on the user ID
+	userData, err := findUserByID(userID) // Implement your own function to fetch the user by ID
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to fetch user"})
+		return
+	}
+
+	// Check if the user exists
+	if userData == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "User not found"})
+		return
+	}
+
+	// Unmarshal the userData into a map
+	var userMap map[string]interface{}
+	if err := json.Unmarshal(userData, &userMap); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to parse user data"})
+		return
+	}
+
+	// Generate a new access token with an extended expiration time using the userMap
+	accessToken, err := generateToken(userMap)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to generate access token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"access_token": accessToken})
+}
+
 
 
 func main() {
 	router := gin.Default()
-
+    router.POST("/refresh-token", refreshTokenHandler)
 	router.Use(cors.Default())
 
 	router.POST("/signup", signupHandler)
